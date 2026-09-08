@@ -683,24 +683,17 @@ td .tag { color: var(--muted); font-size: 0.78rem; }
     return map;
   }
 
+  /* Rendered from analysis.status.headline rather than recomposed here: the
+     server owns the rule and its wording, so the hub and the page cannot
+     drift into saying different things about the same reading. */
   function buildChip(p) {
-    var st = (p.analysis || {}).status || {};
-    var q = st.us_quality_spread;
+    var head = ((p.analysis || {}).status || {}).headline;
     var chip = document.getElementById("chip");
-    if (!q) return;
-    var signal = !!st.signal_active;
-    var pos;
-    if (q.widening_pp <= 0.02) {
-      pos = "at its two-year low";
-    } else {
-      pos = "+" + q.widening_pp.toFixed(2) + " pp off its " + monthWord(q.low_3mma_24m[0]) + " low";
-    }
-    var nfci = st.us_nfci ? " · NFCI " + fmtIdx(st.us_nfci.latest[1]) : "";
-    var html = signal
-      ? "<b>Blowout signal</b> · Baa−Aaa " + q.latest[1].toFixed(2) + " pp, " + pos + nfci
-      : "<b>No blowout</b> · Baa−Aaa " + q.latest[1].toFixed(2) + " pp, " + pos + nfci;
-    chip.innerHTML = '<span class="dot"></span><span>' + html + "</span>";
-    chip.setAttribute("data-state", signal ? "signal" : "normal");
+    if (!head) return;
+    chip.innerHTML = '<span class="dot"></span><span><b>' + head.label + "</b> · " +
+                     head.detail + "</span>";
+    chip.setAttribute("data-state", head.state);
+    chip.title = head.rule;
     chip.hidden = false;
   }
 

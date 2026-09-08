@@ -332,6 +332,27 @@ def _three_month_avg(obs):
             for i in range(2, len(obs))]
 
 
+MONTH_WORDS = ("Jan", "Feb", "Mar", "Apr", "May", "Jun",
+               "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")
+
+# The chip's own rule: EPISODE_RULE's threshold without the sustain and merge
+# conditions, which date completed episodes rather than describe today.
+CHIP_RULE = ("The blowout signal is on when the 3-month average of the Baa "
+             "minus Aaa spread sits 0.40 percentage points or more above its "
+             "low over the prior two years.")
+
+
+def _month_word(iso):
+    parts = iso.split("-")
+    return "%s %s" % (MONTH_WORDS[int(parts[1]) - 1], parts[0])
+
+
+def _signed(value, places=2):
+    """The page's sign convention: U+2212 for negatives, never a hyphen."""
+    sign = "+" if value > 0 else ("−" if value < 0 else "")
+    return "%s%.*f" % (sign, places, abs(value))
+
+
 def build_status(series):
     status = {}
     spread = series.get("us_quality_spread")
@@ -353,6 +374,26 @@ def build_status(series):
         if entry:
             status[sid] = {"latest": [entry["obs"][-1][0], entry["obs"][-1][1]],
                            "first": entry["obs"][0][0]}
+
+    quality = status.get("us_quality_spread")
+    if quality:
+        signal = bool(status.get("signal_active"))
+        if quality["widening_pp"] <= 0.02:
+            position = "at its two-year low"
+        else:
+            position = "+%.2f pp off its %s low" % (
+                quality["widening_pp"], _month_word(quality["low_3mma_24m"][0]))
+        detail = "Baa−Aaa %.2f pp, %s" % (quality["latest"][1], position)
+        nfci = status.get("us_nfci")
+        if nfci:
+            detail += " · NFCI %s" % _signed(nfci["latest"][1])
+        status["headline"] = {
+            "state": "signal" if signal else "normal",
+            "label": "Blowout signal" if signal else "No blowout",
+            "detail": detail,
+            "as_of": quality["latest"][0],
+            "rule": CHIP_RULE,
+        }
     return status
 
 
@@ -662,7 +703,14 @@ def build_data_payload():
     try:
         doc = _load("series.json")
         payload["series"] = doc.get("series", {})
-        payload["analysis"] = doc.get("analysis", {})
+        # The stored block is written by the refresh, which runs out of
+        # process; one written before the status contract existed has no
+        # headline, and the chip would stay hidden until the next scheduled
+        # run. Recomputing the cheap half here makes a deploy take effect now.
+        analysis = dict(doc.get("analysis", {}))
+        if "headline" not in (analysis.get("status") or {}):
+            analysis["status"] = build_status(payload["series"])
+        payload["analysis"] = analysis
         payload["series_fetched_at"] = doc.get("fetched_at")
         payload["series_errors"] = doc.get("errors", {})
     except Exception as exc:  # noqa: BLE001 - charts degrade, page renders
@@ -698,10 +746,16 @@ class Handler(BaseHTTPRequestHandler):
                 doc = _load("series.json")
                 spread = doc.get("series", {}).get("us_quality_spread", {})
                 st = doc.get("analysis", {}).get("status", {})
+                # A stored block written before the status contract existed
+                # has no headline; recompute so health and /api/data agree
+                # rather than the hub seeing one and the page the other.
+                if "headline" not in st:
+                    st = build_status(doc.get("series", {}))
                 self._send(200, {
                     "status": "ok",
                     "series": len(doc.get("series", {})),
                     "latest": spread.get("as_of"),
+                    "headline": st.get("headline"),
                     "signal_active": st.get("signal_active"),
                     "errors": len(doc.get("errors", {})),
                     "fetched_at": doc.get("fetched_at"),
