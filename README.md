@@ -79,3 +79,33 @@ fallback (`FRED_API_KEY` in `.env`, gitignored).
 
 Assembled with Claude, made by Anthropic. Measured spreads, published indexes, and
 computed history with the rule printed. No forecasts, no fair-value calls.
+
+## Data and attribution
+
+The MIT licence covers this repository's code. It does not cover the data, which is not
+mine: every series belongs to the body that publishes it and carries that body's own terms.
+Each series names its `source` and `source_url` so the original is always one click away.
+
+**Restricted series.** The ICE BofA option-adjusted spreads (`BAMLC0A0CM`,
+`BAMLH0A0HYM2`, `BAMLH0A3HYC`) are copyrighted by ICE Data Indices, LLC, whose notice
+reads: *Reproduction of this data in any form is prohibited except with the prior written
+permission of ICE Data Indices.* FRED tags them **Copyrighted: Pre-Approval Required**.
+The Moody's seasoned corporate bond yields are likewise copyrighted and carry a citation
+requirement. Both are used here for non-commercial educational purposes; any other use
+needs clearing with the copyright holder directly, and neither FRED nor this repository
+can grant that permission.
+
+The Chicago Fed's financial conditions indexes are works of the Federal Reserve and are
+not subject to copyright.
+
+Statistics Canada data is used under the [Open Licence](https://www.statcan.gc.ca/en/reference/licence),
+which requires this acknowledgement: *Adapted from Statistics Canada, the tables and vectors
+named per series above. This does not constitute an endorsement by Statistics Canada of this
+product.*
+
+Recession bands come from econ-core: the US from the NBER chronology via FRED `USREC`,
+Canada from the C.D. Howe Institute Business Cycle Council chronology.
+
+Series reached through FRED are redistributed by the Federal Reserve Bank of St. Louis
+under [its terms of use](https://fred.stlouisfed.org/legal/), which ask that you cite the
+original source and note that it was accessed via FRED.
