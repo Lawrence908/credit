@@ -7,7 +7,7 @@ this family's founding note said exactly that ("spread blowouts confirm what the
 only hints at"), and this site computes whether it is true.
 
 Site six of the family, fourth econ-core consumer. Written 2026-09-07; every series was
-probed live from daedalus that day through econcore's fetchers. Two probe findings
+probed live that day through econcore's fetchers. Two probe findings
 reshaped the plan, both below.
 
 ## Verified sources
